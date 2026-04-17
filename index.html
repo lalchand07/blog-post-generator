@@ -16,7 +16,13 @@
     <div class="min-h-screen py-8 px-4">
         <div class="max-w-4xl mx-auto mb-8">
             <div class="gradient text-white rounded-2xl p-8 shadow-2xl">
-                <h1 class="text-4xl font-bold mb-2">📝 Blog Post Generator</h1>
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-4xl font-bold">📝 Blog Post Generator</h1>
+                    <a href="/infographic.html"
+                       class="flex items-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm font-semibold px-4 py-2 rounded-xl transition shadow">
+                        📊 Infographic Generator
+                    </a>
+                </div>
                 <p class="text-lg opacity-90">LinkedIn → SEO Blog for lalchand.online</p>
             </div>
         </div>
@@ -122,7 +128,7 @@
 
     <script>
         async function generateBlog() {
-            const apiKey = document.getElementById('apiKey').value;
+            const apiKey = document.getElementById('apiKey').value.trim();
             const topic = document.getElementById('topic').value;
             const linkedinPost = document.getElementById('linkedinPost').value;
             const keywords = document.getElementById('keywords').value;

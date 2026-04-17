@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infographic Flow Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .tab-active  { border-bottom: 3px solid #6366f1; color: #6366f1; font-weight: 700; background: #f5f3ff; }
+        .tab-inactive{ color: #64748b; font-weight: 500; }
+        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #6366f1; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.75s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white shadow-xl">
+        <div class="max-w-2xl mx-auto px-4 py-7">
+            <div class="flex items-center justify-between mb-3">
+                <a href="/" class="text-indigo-200 hover:text-white text-sm font-medium transition">&#8592; Blog Generator</a>
+                <span class="text-xs text-indigo-200 bg-indigo-700 bg-opacity-60 px-3 py-1 rounded-full font-semibold">Zero Hallucination</span>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight">&#128202; Infographic Flow Generator</h1>
+            <p class="mt-2 text-indigo-100 text-sm">SVG &amp; HTML infographics — Claude generates data, code renders the diagram perfectly</p>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto px-4 py-8 space-y-5">
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4">
+            <h2 class="text-base font-bold text-gray-800">&#9881;&#65039; Configure Your Diagram</h2>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Claude API Key</label>
+                <input type="password" id="apiKey" placeholder="sk-ant-..."
+                    class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 transition">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Topic / Process to Visualize</label>
+                <input type="text" id="topic"
+                    placeholder="e.g. How Machine Learning Works, CI/CD Pipeline, Sales Funnel..."
+                    class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 transition">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Number of Steps</label>
+                <select id="numSteps"
+                    class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 transition">
+                    <option value="4">4 Steps</option>
+                    <option value="5" selected>5 Steps</option>
+                    <option value="6">6 Steps</option>
+                    <option value="7">7 Steps</option>
+                </select>
+            </div>
+
+            <button onclick="generate()" id="generateBtn"
+                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-md hover:shadow-lg text-sm">
+                &#10024; Generate Infographic
+            </button>
+        </div>
+
+        <!-- Error -->
+        <div id="errorMsg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-medium"></div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden flex flex-col items-center py-12 space-y-4">
+            <div class="spinner"></div>
+            <p class="text-gray-600 text-sm font-semibold">Generating your infographic...</p>
+            <p class="text-gray-400 text-xs">Claude is building the flow data</p>
+        </div>
+
+        <!-- Output Section -->
+        <div id="outputSection" class="hidden space-y-4">
+
+            <!-- Tabs + Panels -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+
+                <div class="flex border-b border-gray-100">
+                    <button onclick="switchTab('svg')" id="tab-svg"
+                        class="flex-1 py-3 px-4 text-sm transition tab-active">
+                        &#127912; SVG Diagram
+                    </button>
+                    <button onclick="switchTab('html')" id="tab-html"
+                        class="flex-1 py-3 px-4 text-sm transition tab-inactive">
+                        &#127760; HTML Infographic
+                    </button>
+                </div>
+
+                <!-- SVG Panel -->
+                <div id="panel-svg" class="p-5">
+                    <div id="svgContainer"
+                        class="flex justify-center overflow-auto bg-gray-50 rounded-xl p-4 min-h-32"></div>
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="downloadSVG()"
+                            class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">
+                            &#11015;&#65039; Download SVG
+                        </button>
+                        <button onclick="copySVG()"
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition">
+                            &#128203; Copy SVG Code
+                        </button>
+                    </div>
+                </div>
+
+                <!-- HTML Panel -->
+                <div id="panel-html" class="p-5 hidden">
+                    <div id="htmlContainer"
+                        class="overflow-auto bg-gray-50 rounded-xl p-4 min-h-32"></div>
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="downloadHTML()"
+                            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">
+                            &#11015;&#65039; Download HTML
+                        </button>
+                        <button onclick="copyHTMLSnippet()"
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition">
+                            &#128203; Copy HTML Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Inspector -->
+            <details class="bg-white rounded-2xl shadow border border-gray-100 p-4">
+                <summary class="text-sm font-semibold text-gray-500 cursor-pointer select-none">
+                    &#128269; View Raw JSON (what Claude returned)
+                </summary>
+                <pre id="jsonDisplay"
+                    class="mt-3 text-xs text-gray-600 bg-gray-50 rounded-lg p-3 overflow-auto max-h-48 leading-relaxed"></pre>
+            </details>
+
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 space-y-2 z-50"></div>
+
+    <script>
+    // ─── State ────────────────────────────────────────────────────────────────
+    let currentData = null;
+    let currentSVGStr = '';
+    let currentHTMLStr = '';
+
+    // ─── Gradient palette (7 entries, cycles if more steps) ──────────────────
+    const GRADIENTS = [
+        ['#667eea', '#764ba2'],   // indigo-purple
+        ['#f093fb', '#f5576c'],   // pink-red
+        ['#4facfe', '#00f2fe'],   // sky-cyan
+        ['#43e97b', '#38f9d7'],   // green-teal
+        ['#fa709a', '#fee140'],   // pink-yellow
+        ['#a18cd1', '#fbc2eb'],   // lavender-rose
+        ['#fad961', '#f76b1c'],   // amber-orange
+    ];
+
+    // ─── Tab switch ──────────────────────────────────────────────────────────
+    function switchTab(tab) {
+        document.getElementById('panel-svg').classList.toggle('hidden', tab !== 'svg');
+        document.getElementById('panel-html').classList.toggle('hidden', tab !== 'html');
+        ['svg', 'html'].forEach(t => {
+            document.getElementById('tab-' + t).className =
+                'flex-1 py-3 px-4 text-sm transition ' +
+                (t === tab ? 'tab-active' : 'tab-inactive');
+        });
+    }
+
+    // ─── Build JSON prompt for Claude ────────────────────────────────────────
+    function buildPrompt(topic, numSteps) {
+        return `You are a data visualization assistant. Your job is to return structured JSON for an infographic flow diagram.
+
+TOPIC: "${topic}"
+REQUIRED STEPS: exactly ${numSteps}
+
+CRITICAL OUTPUT RULES:
+- Output ONLY a single valid JSON object
+- No markdown, no backticks, no code fences, no explanation, no comments
+- Response must start with { and end with }
+- Must be directly parseable with JSON.parse()
+
+EXACT JSON FORMAT:
+{
+  "title": "Short catchy title, max 44 characters",
+  "steps": [
+    {
+      "icon": "one single emoji",
+      "title": "Step title, max 22 characters",
+      "description": "One clear sentence, max 54 characters"
+    }
+  ]
+}
+
+CONTENT RULES:
+- Exactly ${numSteps} step objects — no more, no less
+- Each step logically follows the previous (top-to-bottom process flow)
+- Icons: pick a highly relevant, distinct emoji per step
+- Titles: use active verbs, concise and specific
+- Descriptions: concrete and informative, no filler
+
+Now generate JSON for: "${topic}"`;
+    }
+
+    // ─── Call /api/claude ────────────────────────────────────────────────────
+    async function callClaude(apiKey, prompt) {
+        const res = await fetch('/api/claude', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey, prompt })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+            const msg = err?.error?.error?.message || err?.error || 'API request failed';
+            throw new Error(String(msg));
+        }
+        const data = await res.json();
+        const text = data?.content?.[0]?.text;
+        if (!text) throw new Error('Empty response from Claude');
+        return text.trim();
+    }
+
+    // ─── Robust JSON extractor ────────────────────────────────────────────────
+    function extractJSON(raw) {
+        // Direct parse
+        try { return JSON.parse(raw); } catch (_) {}
+        // Find first { ... last }
+        const start = raw.indexOf('{');
+        const end   = raw.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+            try { return JSON.parse(raw.slice(start, end + 1)); } catch (_) {}
+        }
+        throw new Error('Could not parse JSON from Claude response. Got: ' + raw.slice(0, 120));
+    }
+
+    // ─── Validate parsed data ─────────────────────────────────────────────────
+    function validate(data, numSteps) {
+        if (!data || typeof data !== 'object') throw new Error('Response is not a JSON object');
+        if (!data.title || typeof data.title !== 'string') throw new Error('Missing "title" in JSON');
+        if (!Array.isArray(data.steps))  throw new Error('Missing "steps" array in JSON');
+        if (data.steps.length !== numSteps)
+            throw new Error(`Expected ${numSteps} steps but got ${data.steps.length}`);
+        data.steps.forEach((s, i) => {
+            if (!s.icon)        throw new Error(`Step ${i + 1} is missing "icon"`);
+            if (!s.title)       throw new Error(`Step ${i + 1} is missing "title"`);
+            if (!s.description) throw new Error(`Step ${i + 1} is missing "description"`);
+        });
+    }
+
+    // ─── XML escape (for SVG text nodes) ─────────────────────────────────────
+    function x(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // ─── Truncate with ellipsis ───────────────────────────────────────────────
+    function trunc(str, max) {
+        str = String(str);
+        return str.length > max ? str.slice(0, max - 1) + '\u2026' : str;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SVG RENDERER
+    // Each card: width=440, height=120, gap=60, topPad=68, botPad=36
+    // Arrow: vertical line + arrowhead between cards
+    // ─────────────────────────────────────────────────────────────────────────
+    function renderSVG(data) {
+        const W       = 560;
+        const CARD_H  = 118;
+        const GAP     = 58;   // space between cards (arrow lives here)
+        const TOP_PAD = 68;
+        const BOT_PAD = 36;
+        const CARD_X  = 60;
+        const CARD_W  = W - CARD_X * 2;  // 440
+        const n       = data.steps.length;
+        const H       = TOP_PAD + n * CARD_H + (n - 1) * GAP + BOT_PAD;
+
+        let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+
+        // ── defs ──────────────────────────────────────────────────────────────
+        s += `<defs>`;
+
+        // drop-shadow filter
+        s += `<filter id="sh" x="-25%" y="-25%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="5" stdDeviation="9" flood-color="#000000" flood-opacity="0.11"/>
+              </filter>`;
+
+        // arrowhead marker (fixed pixel size, not scaled with stroke-width)
+        s += `<marker id="arr" viewBox="0 0 10 7" markerWidth="14" markerHeight="10"
+                    refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+                <polygon points="0,0 10,3.5 0,7" fill="#818cf8"/>
+              </marker>`;
+
+        // per-step gradients
+        data.steps.forEach((_, i) => {
+            const [c1, c2] = GRADIENTS[i % GRADIENTS.length];
+            s += `<linearGradient id="g${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   stop-color="${c1}"/>
+                    <stop offset="100%" stop-color="${c2}"/>
+                  </linearGradient>`;
+        });
+        s += `</defs>`;
+
+        // ── background ────────────────────────────────────────────────────────
+        s += `<rect width="${W}" height="${H}" fill="#f1f5f9" rx="18"/>`;
+
+        // ── diagram title ─────────────────────────────────────────────────────
+        s += `<text x="${W / 2}" y="40"
+                    font-family="system-ui,-apple-system,sans-serif"
+                    font-size="17" font-weight="800" fill="#1e293b"
+                    text-anchor="middle" letter-spacing="-0.4">
+                ${x(trunc(data.title, 48))}
+              </text>`;
+
+        // ── steps ─────────────────────────────────────────────────────────────
+        data.steps.forEach((step, i) => {
+            const yTop    = TOP_PAD + i * (CARD_H + GAP);
+            const yCenter = yTop + CARD_H / 2;
+
+            // ── arrow from previous card ──────────────────────────────────────
+            if (i > 0) {
+                const prevBottom = TOP_PAD + (i - 1) * (CARD_H + GAP) + CARD_H;
+                // leave 14px gap for arrowhead at bottom end
+                s += `<line x1="${W / 2}" y1="${prevBottom + 2}"
+                            x2="${W / 2}" y2="${yTop - 14}"
+                            stroke="#818cf8" stroke-width="2.5"
+                            stroke-linecap="round"
+                            marker-end="url(#arr)"/>`;
+            }
+
+            // ── card background ───────────────────────────────────────────────
+            s += `<rect x="${CARD_X}" y="${yTop}"
+                        width="${CARD_W}" height="${CARD_H}" rx="16"
+                        fill="url(#g${i})" filter="url(#sh)"/>`;
+
+            // ── step-number pill ──────────────────────────────────────────────
+            s += `<rect x="${CARD_X + 12}" y="${yTop + 11}" width="46" height="19" rx="9"
+                        fill="rgba(0,0,0,0.20)"/>`;
+            s += `<text x="${CARD_X + 35}" y="${yTop + 24}"
+                        font-family="system-ui,sans-serif" font-size="10" font-weight="700"
+                        fill="rgba(255,255,255,0.92)" text-anchor="middle" letter-spacing="0.6">
+                    STEP ${i + 1}
+                  </text>`;
+
+            // ── icon ──────────────────────────────────────────────────────────
+            // Icon circle background
+            s += `<circle cx="${CARD_X + 52}" cy="${yCenter + 8}" r="28"
+                          fill="rgba(0,0,0,0.16)"/>`;
+            s += `<text x="${CARD_X + 52}" y="${yCenter + 18}"
+                        font-size="28" text-anchor="middle">${String(step.icon).slice(0, 2)}</text>`;
+
+            // ── title ─────────────────────────────────────────────────────────
+            s += `<text x="${CARD_X + 100}" y="${yCenter + 1}"
+                        font-family="system-ui,-apple-system,sans-serif"
+                        font-size="15" font-weight="700" fill="white" text-anchor="start">
+                    ${x(trunc(step.title, 26))}
+                  </text>`;
+
+            // ── description ───────────────────────────────────────────────────
+            s += `<text x="${CARD_X + 100}" y="${yCenter + 22}"
+                        font-family="system-ui,-apple-system,sans-serif"
+                        font-size="11.5" fill="rgba(255,255,255,0.86)" text-anchor="start">
+                    ${x(trunc(step.description, 54))}
+                  </text>`;
+        });
+
+        s += `</svg>`;
+        return s;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HTML RENDERER
+    // Cards are flex rows (icon left, text right) with gradient backgrounds.
+    // Connector: vertical line + downward triangle arrow between cards.
+    // Fully self-contained inline CSS — no external dependencies.
+    // ─────────────────────────────────────────────────────────────────────────
+    function renderHTML(data) {
+        let html = `<div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;` +
+                   `max-width:440px;margin:0 auto;padding:24px;background:#f1f5f9;` +
+                   `border-radius:20px;box-sizing:border-box;">`;
+
+        // title
+        html += `<h2 style="text-align:center;color:#1e293b;font-size:17px;font-weight:800;` +
+                `margin:0 0 22px;letter-spacing:-0.3px;line-height:1.3;">` +
+                escHTML(data.title) + `</h2>`;
+
+        data.steps.forEach((step, i) => {
+            const [c1, c2] = GRADIENTS[i % GRADIENTS.length];
+            const textColor  = 'white';
+            const mutedColor = 'rgba(255,255,255,0.82)';
+
+            // ── card ──────────────────────────────────────────────────────────
+            html += `<div style="background:linear-gradient(135deg,${c1},${c2});` +
+                    `border-radius:16px;padding:18px 20px;` +
+                    `box-shadow:0 8px 28px rgba(0,0,0,0.13);` +
+                    `display:flex;align-items:center;gap:16px;box-sizing:border-box;">`;
+
+            // icon circle
+            html += `<div style="width:56px;height:56px;min-width:56px;` +
+                    `background:rgba(0,0,0,0.18);border-radius:50%;` +
+                    `display:flex;align-items:center;justify-content:center;` +
+                    `font-size:28px;line-height:1;">` +
+                    String(step.icon).slice(0, 2) + `</div>`;
+
+            // text block
+            html += `<div style="flex:1;overflow:hidden;">`;
+            html += `<div style="font-size:9px;font-weight:700;color:${mutedColor};` +
+                    `text-transform:uppercase;letter-spacing:1.3px;margin-bottom:3px;">` +
+                    `Step ${i + 1}</div>`;
+            html += `<div style="font-size:15px;font-weight:700;color:${textColor};` +
+                    `margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">` +
+                    escHTML(step.title) + `</div>`;
+            html += `<div style="font-size:12px;color:${mutedColor};line-height:1.45;">` +
+                    escHTML(step.description) + `</div>`;
+            html += `</div>`;  // text block
+            html += `</div>`;  // card
+
+            // ── connector arrow ───────────────────────────────────────────────
+            if (i < data.steps.length - 1) {
+                html += `<div style="display:flex;flex-direction:column;align-items:center;` +
+                        `height:36px;justify-content:center;">` +
+                        `<div style="width:2px;height:14px;background:#818cf8;"></div>` +
+                        `<div style="width:0;height:0;border-left:7px solid transparent;` +
+                        `border-right:7px solid transparent;border-top:10px solid #818cf8;"></div>` +
+                        `</div>`;
+            }
+        });
+
+        html += `</div>`;
+        return html;
+    }
+
+    // HTML escape for text inside HTML attributes / text nodes
+    function escHTML(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // ─── Main generate function ───────────────────────────────────────────────
+    async function generate() {
+        const apiKey   = document.getElementById('apiKey').value.trim();
+        const topic    = document.getElementById('topic').value.trim();
+        const numSteps = parseInt(document.getElementById('numSteps').value, 10);
+
+        if (!apiKey) return showError('Please enter your Claude API key.');
+        if (!topic)  return showError('Please enter a topic to visualize.');
+
+        hideError();
+        setLoading(true);
+        document.getElementById('outputSection').classList.add('hidden');
+
+        try {
+            const prompt  = buildPrompt(topic, numSteps);
+            const rawText = await callClaude(apiKey, prompt);
+
+            const data = extractJSON(rawText);
+            validate(data, numSteps);
+
+            currentData    = data;
+            currentSVGStr  = renderSVG(data);
+            currentHTMLStr = renderHTML(data);
+
+            document.getElementById('svgContainer').innerHTML  = currentSVGStr;
+            document.getElementById('htmlContainer').innerHTML = currentHTMLStr;
+            document.getElementById('jsonDisplay').textContent = JSON.stringify(data, null, 2);
+
+            document.getElementById('outputSection').classList.remove('hidden');
+            switchTab('svg');
+
+            // Scroll to output
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        } catch (err) {
+            showError(err.message || 'Unexpected error — please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // ─── Download SVG ────────────────────────────────────────────────────────
+    function downloadSVG() {
+        if (!currentSVGStr) return;
+        downloadBlob(currentSVGStr, 'image/svg+xml', 'infographic.svg');
+    }
+
+    // ─── Copy SVG ─────────────────────────────────────────────────────────────
+    function copySVG() {
+        if (!currentSVGStr) return;
+        navigator.clipboard.writeText(currentSVGStr)
+            .then(() => toast('SVG code copied!'))
+            .catch(() => toast('Copy failed — try Ctrl+A in the panel.', true));
+    }
+
+    // ─── Download HTML ────────────────────────────────────────────────────────
+    function downloadHTML() {
+        if (!currentHTMLStr) return;
+        const full = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escHTML(currentData?.title || 'Infographic')}</title>
+  <style>
+    body { margin: 0; padding: 32px 16px; background: #fff;
+           display: flex; justify-content: center; min-height: 100vh; }
+  </style>
+</head>
+<body>
+${currentHTMLStr}
+</body>
+</html>`;
+        downloadBlob(full, 'text/html', 'infographic.html');
+    }
+
+    // ─── Copy HTML snippet ────────────────────────────────────────────────────
+    function copyHTMLSnippet() {
+        if (!currentHTMLStr) return;
+        navigator.clipboard.writeText(currentHTMLStr)
+            .then(() => toast('HTML code copied!'))
+            .catch(() => toast('Copy failed — try Ctrl+A in the panel.', true));
+    }
+
+    // ─── Blob download helper ─────────────────────────────────────────────────
+    function downloadBlob(content, mime, filename) {
+        const blob = new Blob([content], { type: mime });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ─── UI helpers ──────────────────────────────────────────────────────────
+    function setLoading(on) {
+        document.getElementById('loading').classList.toggle('hidden', !on);
+        const btn = document.getElementById('generateBtn');
+        btn.disabled   = on;
+        btn.textContent = on ? '\u23F3 Generating...' : '\u2728 Generate Infographic';
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        el.textContent = '\u26A0\uFE0F ' + msg;
+        el.classList.remove('hidden');
+    }
+
+    function hideError() {
+        document.getElementById('errorMsg').classList.add('hidden');
+    }
+
+    function toast(msg, isError = false) {
+        const t = document.createElement('div');
+        t.style.cssText = [
+            'padding:10px 18px',
+            'border-radius:10px',
+            'font-size:13px',
+            'font-weight:600',
+            'color:white',
+            'box-shadow:0 4px 20px rgba(0,0,0,0.18)',
+            isError ? 'background:#ef4444' : 'background:#1e293b',
+        ].join(';');
+        t.textContent = (isError ? '⚠️ ' : '✅ ') + msg;
+        document.getElementById('toastContainer').appendChild(t);
+        setTimeout(() => t.remove(), 2800);
+    }
+
+    // ─── Keyboard shortcut ────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('topic').addEventListener('keydown', e => {
+            if (e.key === 'Enter') generate();
+        });
+    });
+    </script>
+</body>
+</html>
