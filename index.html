@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post Generator - lalchand.online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+        .gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="gradient text-white rounded-2xl p-8 shadow-2xl">
+                <h1 class="text-4xl font-bold mb-2">📝 Blog Post Generator</h1>
+                <p class="text-lg opacity-90">LinkedIn → SEO Blog for lalchand.online</p>
+            </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">Claude API Key</label>
+                    <input type="password" id="apiKey" 
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                           placeholder="sk-ant-...">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">Blog Topic</label>
+                    <input type="text" id="topic" 
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                           placeholder="e.g., 'Complete guide to n8n webhook automation'">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">LinkedIn Post (Optional - to expand)</label>
+                    <textarea id="linkedinPost" rows="6"
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                              placeholder="Paste your LinkedIn post here to expand it into a full blog..."></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">Target Keywords (comma-separated)</label>
+                    <input type="text" id="keywords" 
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                           placeholder="n8n automation, webhook tutorial, workflow automation">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">Blog Style</label>
+                    <select id="style" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        <option value="tutorial">📚 Tutorial / How-To Guide</option>
+                        <option value="technical">🔧 Technical Deep Dive</option>
+                        <option value="case-study">💼 Case Study</option>
+                        <option value="comparison">⚖️ Tool Comparison</option>
+                        <option value="beginner">🌱 Beginner-Friendly</option>
+                    </select>
+                </div>
+
+                <button onclick="generateBlog()" 
+                        class="w-full gradient text-white font-bold py-4 px-6 rounded-lg hover:opacity-90 transition shadow-lg">
+                    ✨ Generate SEO Blog Post
+                </button>
+
+                <div id="output" class="mt-8 hidden">
+                    <div class="border-t-4 border-purple-500 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">Generated Blog Post</h2>
+                            <div class="flex gap-2">
+                                <button onclick="copyMarkdown()" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-semibold hover:bg-green-200">
+                                    📋 Copy Markdown
+                                </button>
+                                <button onclick="copyHTML()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200">
+                                    🌐 Copy HTML
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-purple-50 rounded-lg p-4 mb-6" id="seoDetails"></div>
+
+                        <div class="prose max-w-none bg-white border-2 border-gray-200 rounded-lg p-8" id="blogPreview"></div>
+
+                        <details class="mt-6">
+                            <summary class="cursor-pointer font-semibold text-gray-700 hover:text-purple-600">View Markdown Source</summary>
+                            <pre id="markdownSource" class="mt-4 bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm"></pre>
+                        </details>
+                    </div>
+                </div>
+
+                <div id="loading" class="mt-8 hidden text-center">
+                    <div class="inline-block w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="mt-4 text-gray-600">Generating your blog post...</p>
+                    <p class="text-sm text-gray-400">This takes 20-30 seconds</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mt-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="text-3xl mb-3">🎯</div>
+                    <h3 class="font-bold mb-2">SEO Optimized</h3>
+                    <p class="text-sm text-gray-600">Meta descriptions, keywords, structured headings</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="font-bold mb-2">Expand LinkedIn</h3>
+                    <p class="text-sm text-gray-600">Turn 200-word posts into 1500+ word blogs</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="text-3xl mb-3">⚡</div>
+                    <h3 class="font-bold mb-2">Ready to Publish</h3>
+                    <p class="text-sm text-gray-600">Markdown + HTML for any platform</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function generateBlog() {
+            const apiKey = document.getElementById('apiKey').value;
+            const topic = document.getElementById('topic').value;
+            const linkedinPost = document.getElementById('linkedinPost').value;
+            const keywords = document.getElementById('keywords').value;
+            const style = document.getElementById('style').value;
+
+            if (!apiKey || !topic) {
+                alert('Please enter API key and topic');
+                return;
+            }
+
+            document.getElementById('output').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            try {
+                const prompt = createBlogPrompt(topic, linkedinPost, keywords, style);
+                const blog = await callClaude(apiKey, prompt);
+                
+                displayBlog(blog, topic, keywords);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function createBlogPrompt(topic, linkedinPost, keywords, style) {
+            const styleGuides = {
+                tutorial: 'Step-by-step tutorial with clear instructions, code examples, and screenshots descriptions',
+                technical: 'Technical deep dive with architecture explanations, best practices, and advanced concepts',
+                'case-study': 'Real-world case study with problem, solution, implementation, and results',
+                comparison: 'Detailed comparison with pros/cons, use cases, and recommendations',
+                beginner: 'Beginner-friendly with simple explanations, no jargon, lots of examples'
+            };
+
+            return `You are writing a blog post for lalchand.online - Lal Chand's AI automation expert blog.
+
+TOPIC: ${topic}
+STYLE: ${styleGuides[style]}
+TARGET KEYWORDS: ${keywords}
+
+${linkedinPost ? `EXPAND THIS LINKEDIN POST INTO A FULL BLOG:\n${linkedinPost}\n\n` : ''}
+
+REQUIREMENTS:
+
+1. SEO OPTIMIZATION:
+   - Write compelling meta title (50-60 chars)
+   - Write meta description (150-160 chars)
+   - Use keywords naturally in headings and content
+   - Include internal linking suggestions
+
+2. STRUCTURE:
+   - Engaging introduction (hook + problem + solution preview)
+   - 5-7 main sections with H2 headings
+   - Clear subheadings (H3) for scanability
+   - Conclusion with CTA
+
+3. CONTENT:
+   - 1500-2000 words
+   - Use specific examples, code snippets, tool names
+   - Include actionable steps
+   - Add "Pro Tips" callouts
+   - Reference real tools and GitHub repos when relevant
+
+4. WRITING STYLE:
+   - First person (I/my) to match Lal Chand's voice
+   - Conversational but professional
+   - Short paragraphs (3-4 lines max)
+   - Use bullet points and numbered lists
+   - Add relevant emojis sparingly
+
+5. FORMAT AS MARKDOWN:
+   - Use proper heading hierarchy
+   - Include code blocks with language tags
+   - Add blockquotes for tips
+   - Use bold and italic appropriately
+
+6. INCLUDE AT END:
+   - FAQ section (3-5 common questions)
+   - "What's Next" / Related Resources
+   - Author bio snippet
+   - CTA to contact/hire
+
+Return ONLY the markdown content. Start with frontmatter:
+---
+title: [SEO Title]
+description: [Meta Description]
+keywords: [Keywords]
+author: Lal Chand
+date: ${new Date().toISOString().split('T')[0]}
+---
+
+Then the full blog post in markdown.`;
+        }
+
+        async function callClaude(apiKey, prompt) {
+            const response = await fetch('/api/claude', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey, prompt })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || errorData.error || response.statusText);
+            }
+
+            const data = await response.json();
+            return data.content[0].text;
+        }
+
+        function displayBlog(markdown, topic, keywords) {
+            const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+            let seoData = {};
+            let content = markdown;
+
+            if (frontmatterMatch) {
+                const frontmatter = frontmatterMatch[1];
+                content = frontmatterMatch[2];
+                
+                frontmatter.split('\n').forEach(line => {
+                    const [key, ...value] = line.split(':');
+                    if (key && value.length) {
+                        seoData[key.trim()] = value.join(':').trim();
+                    }
+                });
+            }
+
+            document.getElementById('seoDetails').innerHTML = `
+                <h3 class="font-bold text-purple-900 mb-3">📊 SEO Details</h3>
+                <div class="space-y-2 text-sm">
+                    <div><strong>Title:</strong> ${seoData.title || topic}</div>
+                    <div><strong>Description:</strong> ${seoData.description || 'Auto-generated'}</div>
+                    <div><strong>Keywords:</strong> ${seoData.keywords || keywords}</div>
+                    <div><strong>Estimated Reading Time:</strong> ${Math.ceil(content.split(' ').length / 200)} min</div>
+                    <div><strong>Word Count:</strong> ${content.split(' ').length} words</div>
+                </div>
+            `;
+
+            const html = simpleMarkdownToHTML(content);
+            document.getElementById('blogPreview').innerHTML = html;
+            
+            window.currentMarkdown = markdown;
+            window.currentHTML = html;
+            document.getElementById('markdownSource').textContent = markdown;
+
+            document.getElementById('output').classList.remove('hidden');
+        }
+
+        function simpleMarkdownToHTML(md) {
+            return md
+                .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-6 mb-3">$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-8 mb-4">$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-10 mb-5">$1</h1>')
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto my-4"><code>$2</code></pre>')
+                .replace(/`(.+?)`/g, '<code class="bg-gray-100 px-2 py-1 rounded text-sm">$1</code>')
+                .replace(/^> (.+$)/gim, '<blockquote class="border-l-4 border-purple-500 pl-4 italic my-4">$1</blockquote>')
+                .replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" class="text-purple-600 hover:underline">$1</a>')
+                .replace(/^\* (.+$)/gim, '<li class="ml-6">$1</li>')
+                .replace(/^\d+\. (.+$)/gim, '<li class="ml-6">$1</li>')
+                .split('\n\n')
+                .map(p => p.trim() ? `<p class="mb-4">${p}</p>` : '')
+                .join('\n');
+        }
+
+        function copyMarkdown() {
+            navigator.clipboard.writeText(window.currentMarkdown);
+            alert('✅ Markdown copied! Ready to paste in your CMS');
+        }
+
+        function copyHTML() {
+            navigator.clipboard.writeText(window.currentHTML);
+            alert('✅ HTML copied! Ready to paste in your website');
+        }
+    </script>
+</body>
+</html>
